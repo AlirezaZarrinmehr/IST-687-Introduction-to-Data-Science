@@ -1,0 +1,131 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Intro to Data Science - Lab 6
+##### Copyright 2022, Jeffrey Stanton and Jeffrey Saltz   Please do not post online.
+
+## Week 6 - Using	ggplot	to	Build	 Complex	Data	Displays
+
+```{r}
+# Enter your name here: Alireza Zarrinmehr
+```
+
+### Please include nice comments. <br>
+### Instructions: 
+Run the necessary code on your own instance of R-Studio.
+
+### Attribution statement: (choose only one and delete the rest)
+
+# 1. I did this lab assignment by myself, with help from the book and the professor, Faculty Assistant, and TA! they should make more money!
+```{r}
+# 1. I did this lab assignment by myself, with help from the book and the professor, Faculty Assistant, and TA! they should make more money!
+```
+
+Creating	graphical	displays	of	data	is	an	essential	skill	for	all	data	scientists	because	so	much	of	what	data	scientists	do	involves	communicating	with	other	people	about	data.	The	**ggplot2**	package	developed	by	data	scientist	Hadley	Wickham (https://en.wikipedia.org/wiki/Hadley_Wickham)	provides	excellent	power	and	flexibility	for	graphically	displaying	data.	Whole	books	have	been	written	about	**ggplot2**	(e.g.:	https://www.springer.com/gp/book/9780387981413 ),	so	we	will	only	be	able	to	scratch	the	surface,	but	we	will	master	the	basic	 grammar 	that	you	need	in	order	to	use	this	
+package.	<br><br>For	this lab we	will	also	use	a	dataset	that	comes	delivered in R,	called	** economics **. It contains	574	 snapshots	of	U.S.	economic	conditions	between	1967	and	2014.<br><br>		
+Here	are	two lines	of	starter	code:	<br><br>
+
+
+```
+MyPlot <- ggplot(economics, aes(x=date))
+myPlot <- myPlot + geom_line(aes(y=psavert))
+```
+
+
+1. Run	these	two lines	of	code below.	What	happens?	How	do	you	actually	 invoke 	the plot	
+(i.e.,	how	do	you	get	it	to	draw	in	the	plot	window)?
+
+#When we run these two line of codes the plot will get created. we indicated x and y as date and personal saving rate.
+#We use the last line on code to invoke the plot.
+```{r}
+library(ggplot2)
+MyPlot <- ggplot(economics, aes(x=date))
+MyPlot <- MyPlot + geom_line(aes(y=psavert))
+#When we run these two line of codes the plot will get created. we indicated x and y as date and personal saving rate.
+MyPlot
+#We use the last line on code to invoke the plot.
+
+```
+
+2. Run `help("economics")` to	find	out	the	meaning	of	the	**psavert**	variable.
+
+```{r}
+help("economics")
+#personal savings rate
+```
+
+3. Examine	the	plot	to	estimate	when	the	personal	savings	rate	reached	its maximum	
+value.	Also	examine	the	plot	to	estimate	when	the	personal	savings rate	reached	its	
+minimum	value.
+
+#in 1975 we reached the maximum personal saving rate and in 2005 we reached the minimum personal saving rate.
+
+```{r}
+#in 1975 we reached the maximum personal saving rate and in 2005 we reached the minimum personal saving rate.
+```
+
+4. Use	**which.max(	)**	and	**which.min(	)**	to	verify	your	guesses	from	problem	3.
+
+```{r}
+economics[which.max(economics$psavert), c('date') ] #max
+economics[which.min(economics$psavert), c('date')] #min
+```
+
+5. Change	the	color	of	the	plot	line	to	green.<br><br>	**Hint:** Changing	a	line	to	a	constant color	happens	in	the	specification	of	the	**geometry**.
+
+```{r}
+MyPlot1 <- MyPlot + geom_line(aes(x=date, y=psavert), color='green')
+MyPlot1
+```
+
+6. Add	a	title	to	the	plot	with	the	**ggtitle("Put	title	here")**	sub-command.	The	title **"Personal	Savings	Rate:	1967-2014"** would	be	a	good	choice.
+
+```{r}
+MyPlot1 <- MyPlot1 + ggtitle("Personal Savings Rate: 1967-2014")
+MyPlot1
+```
+
+7. Add	another	data	series	to	your	plot	to	show	the	variable	**uempmed**	as	a	red line.
+
+```{r}
+MyPlot <- MyPlot1 + geom_line(aes(y = uempmed), color='Red')
+MyPlot
+```
+
+8. Change	the	title	of	the	plot	to	mention	both	variables.
+
+```{r}
+MyPlot <- MyPlot + ggtitle("Personal Savings Rate & Median unemployment Rate: 1967-2014")
+MyPlot
+```
+
+9. You	can	modify	the	axis	labels	in	a	ggplot	with	**ylab(	)**	and	**xlab(	)**	subcommands.
+Change	the	axis	labeling	as	needed	to	account	for	plotting	both **psavert**	and **uempmed**	 in	the	same	window.
+
+```{r}
+MyPlot <- MyPlot + ylab("psavert(green),uempmed(red)") + xlab("Years")
+MyPlot
+```
+
+10. Create	one	last	plot,	creating	a	scatter	plot,	having	the	**unemploy** on	the	x-axis, **psavert**	
+on	the	yaxis.	Color	each	point	based	on	the	**uempmed**.
+
+```{r}
+MyPlot2 <- ggplot(economics)
+MyPlot2 <- MyPlot2 + aes(x = unemploy, y = psavert, color = unemploy)
+MyPlot2 <- MyPlot2 + geom_point()
+MyPlot2
+
+```
+
+11. Interpret	(using comments in R) what	you	see	in	this	last	graph.
+
+#As unemployment is rising the personal saving goes down. Higher unemployment are shown by lighter blue color. There could be a possibility of negative correlation. There is a congestion of data points near 8000
+
+```{r}
+#As unemployment is rising the personal saving goes down. Higher unemployment are shown by lighter blue color. There could be a possibility of negative correlation. There is a congestion of data points near 8000
+```
+
