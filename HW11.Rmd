@@ -1,0 +1,197 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+# Intro to Data Science - HW 11
+##### Copyright 2022, Jeffrey Stanton, Jeffrey Saltz, Christopher Dunham, and Jasmina Tacheva
+
+```{r}
+# Enter your name here: Alireza Zarrinmehr
+```
+
+### Attribution statement: (choose only one and delete the rest)
+
+```{r}
+# 1. I did this homework by myself, with help from the book and the professor.
+```
+
+**Text mining** plays an important role in many industries because of the prevalence of text in the interactions between customers and company representatives. Even when the customer interaction is by speech, rather than by chat or email, speech to text algorithms have gotten so good that transcriptions of these spoken word interactions are often available. To an increasing extent, a data scientist needs to be able to wield tools that turn a body of text into actionable insights. In this homework, we explore a real **City of Syracuse dataset** using the **quanteda** and **quanteda.textplots** packages. Make sure to install the **quanteda** and **quanteda.textplots** packages before following the steps below:<br>
+
+## Part 1: Load and visualize the data file  
+A.	Take a look at this article: https://samedelstein.medium.com/snowplow-naming-contest-data-2dcd38272caf and write a comment in your R script, briefly describing what it is about.<br>
+
+```{r}
+#It is about naming the snowplows. There are 10 new snowplows that we are trying to fin names for. we asked people for their suggestions and they submitted 2000 names and 1,948 of them are unique. Sam obtained the Syracuse City Authority's Snowplow Naming Contest Data and converted it to a CSV file and made some analysis about the names.
+#install.packages('quanteda')
+
+#install.packages('quanteda.textplots')
+library(quanteda.textplots)
+library(quanteda.textstats)
+library(quanteda)
+library(tidyverse)
+```
+
+B.	Read the data from the following URL into a dataframe called **df**:
+https://intro-datascience.s3.us-east-2.amazonaws.com/snowplownames.csv
+
+```{r}
+df <- read_csv("https://intro-datascience.s3.us-east-2.amazonaws.com/snowplownames.csv")
+```
+
+C.	Inspect the **df** dataframe   which column contains an explanation of the meaning of each submitted snowplow name? 
+
+```{r}
+head(df)
+str(df)
+# the meaning column has the name explanation.
+```
+
+D. Transform that column into a **document-feature matrix**, using the **corpus()**, **tokens(), tokens_select()**, and **dfm()** functions from the quanteda package. Do not forget to **remove stop words**.
+
+```{r}
+#install.packages("quanteda")
+
+meaningCorpus <- corpus(df$meaning, docnames= df$submission_number)
+#Removing the punctuations from the corpus.
+toks <- tokens(meaningCorpus, remove_punct=TRUE)
+#Removing the stopwords.
+toks_nostop <- tokens_select(toks, pattern = stopwords("en"), selection = "remove")
+toks_nostop <- gsub("ï", "", toks_nostop, fixed = TRUE)
+toks_nostop <- gsub("¿", "", toks_nostop, fixed = TRUE)
+toks_nostop <- gsub("½", "", toks_nostop, fixed = TRUE)
+toks_nostop <- gsub("�", "", toks_nostop, fixed = TRUE)
+
+meaningDFM <- dfm(toks_nostop, tolower = TRUE )
+meaningDFM
+```
+
+E.	Plot a **word cloud** where a word is only represented if it appears **at least 2 times** in the corpus. **Hint:** use **textplot_wordcloud()** from the quanteda.textplots package:
+
+```{r}
+#install.packages("quanteda.textplots")
+textplot_wordcloud(meaningDFM, min_count = 2)
+```
+
+F.	Next, **increase the minimum count to 10**. What happens to the word cloud? **Explain in a comment**. 
+
+```{r}
+textplot_wordcloud(meaningDFM, min_count = 10)
+#It gets smaller as there are less words with frequency of 10 or higher.
+```
+
+G.	What are the top 10 words in the word cloud?
+
+**Hint**: use textstat_frequency in the quanteda.textstats package
+
+```{r}
+textstat_frequency(meaningDFM, 10)
+```
+
+H.	Explain in a comment what you observed in the sorted list of word counts. 
+
+```{r}
+#The top 10 list definitely includes the important topics of the dataset, such as ssnow, syracuse, name, plow, salt, columbus, city, plows, like, and one. Thus, the winning name may include any of these words (like salt and snow).
+```
+
+## Part 2: Analyze the sentiment of the descriptions
+
+###Match the review words with positive and negative words
+
+A.	Read in the list of positive words (using the scan() function), and output the first 5 words in the list. 
+
+https://intro-datascience.s3.us-east-2.amazonaws.com/positive-words.txt
+<br>
+
+There should be 2006 positive words words, so you may need to clean up these lists a bit. 
+
+```{r}
+URL <- "https://intro-datascience.s3.us-east-2.amazonaws.com/positive-words.txt"
+posWords <- scan(URL, character(0), sep = "\n")
+posWords <- posWords[-1:-34]
+head(posWords, 5)
+```
+
+B. Do the same for the  the negative words list (there are 4783 negative words): <br>
+<br>
+https://intro-datascience.s3.us-east-2.amazonaws.com/negative-words.txt <br>
+
+
+```{r}
+
+URL1 <- "https://intro-datascience.s3.us-east-2.amazonaws.com/negative-words.txt"
+negWords <- scan(URL1, character(0), sep = "\n")
+negWords <- negWords[-1:-34]
+head(negWords, 5)
+```
+
+C.	Using **dfm_match()** with the dfm and the positive word file you read in, and then **textstat_frequency()**, output the 10 most frequent positive words
+
+```{r}
+PosDFM <- dfm_match(meaningDFM, posWords)
+FreqPos<-textstat_frequency(PosDFM)
+FreqPos[1:10,]
+```
+
+D.	Use R to print out the total number of positive words in the name explanation.
+
+```{r}
+glimpse(FreqPos)
+#There are 211 positive words.
+```
+
+E.	Repeat that process for the negative words you matched. Which negative words were in the name explanation variable, and what is their total number?
+
+```{r}
+NegDFM <- dfm_match(meaningDFM, negWords)
+FreqNeg<-textstat_frequency(NegDFM)
+FreqNeg[1:10,]
+glimpse(FreqNeg)
+#There are 149 negative words.
+```
+
+F.	Write a comment describing what you found after exploring the positive and negative word lists. Which group is more common in this dataset?
+
+```{r}
+# We have more positive words in the data set. Moreover, positive words are more common and are used more frequently.
+```
+
+G. Complete the function below, so that it returns a sentiment score (number of positive words - number of negative words)
+
+```{r}
+doMySentiment <- function(posWords, negWords, stringToAnalyze ) { 
+    corpus <- corpus(stringToAnalyze)
+    toks <- tokens(corpus, remove_punct=TRUE)
+    AnalyDFM <-dfm(toks, tolower = TRUE)
+    posWords1 <-dfm_match(AnalyDFM, posWords)
+    negWords1 <-dfm_match(AnalyDFM, negWords)
+    sentimentScore <- sum(posWords1) - sum(negWords1)
+  
+  return(sentimentScore)
+}
+```
+
+H. Test your function with the string "This book is horrible"
+
+```{r}
+doMySentiment(posWords, negWords, "This book is horrible")
+```
+
+I. Use the syuzhet package, to calculate the sentiment of the same phrase ("This book is horrible"), using syuzhet's **get_sentiment()** function, using the afinn method. In AFINN, words are scored as integers from -5 to +5:
+
+```{r}
+#install.packages("syuzhet")
+library(syuzhet)
+
+get_sentiment("This book is horrible", method="afinn")
+```
+
+In a block comment, compare the results of your function with the get_sentiment function
+
+```{r}
+# I believe there is only one negative word in this sentence.
+# Either the package must have used a different scale of scoring or it identified more negative words
+```
+

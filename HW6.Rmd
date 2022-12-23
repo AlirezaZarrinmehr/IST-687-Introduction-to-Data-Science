@@ -1,0 +1,286 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Intro to Data Science - HW 6
+
+
+##### Copyright Jeffrey Stanton 2022, Jeffrey Saltz, and Jasmina Tacheva
+
+```{r}
+# Enter your name here: Alireza Zarrinmehr
+```
+
+
+### Attribution statement: (choose only one and delete the rest)
+
+```{r}
+# 1. I did this homework by myself, with help from the book and the professor.
+```
+
+**This module:** **Data visualization** is important because many people can make sense of data more easily when it is presented in graphic form. As a data scientist, you will have to present complex data to decision makers in a form that makes the data interpretable for them. From your experience with Excel and other tools, you know that there are a variety of **common data visualizations** (e.g., pie charts). How many of them can you name? <br>
+
+Bar chart, Pie chart, Pareto chart, Dotplot, Boxplot, Histogram, Time serier graph.
+
+The most powerful tool for data visualization in R is called **ggplot2**. Written by computer/data scientist **Hadley Wickham**, this ** graphics grammar ** tool builds visualizations in layers. This method provides immense flexibility, but takes a bit of practice to master.
+
+## Step 1: Make a copy of the data
+
+A.	Read the **New York State COVID Testing** dataset we used in HW 3 & 4 from this URL: https://data-science-intro.s3.us-east-2.amazonaws.com/NYS_COVID_Testing_.csv <br>
+into a new dataframe called **df**. 
+
+
+```{r}
+# Get the data from csv file and store it in variable df
+df <- read.csv("https://data-science-intro.s3.us-east-2.amazonaws.com/NYS_COVID_Testing_.csv")
+# Show the first 6 rows
+head(df)
+str(df)
+```
+
+B.	Your dataframe, **df**, contains a so-called **multivariate time series**: a sequence of measurements on COVID tests and results captured repeatedly over time (March 2020 - January 2022). Familiarize yourself with the nature of the time variable **TestDate**.
+<br>How often were these measurements taken (in other words, at what frequency were the variables measured)? Put your answer in a comment. 
+
+```{r}
+# load the library
+library(dplyr)
+library(lubridate)
+# Create a new data frame df2 with a varable showing how many test were taken each day
+df2 <- df%>%group_by(TestDate)%>%summarise(TotalTests= sum(TotalTests))%>%arrange(TestDate)
+# show the first 6 row of that data frame df2
+head(df2)
+# Add the new variable TestDateCT to the data frame that shows the dates in date type
+df2$TestDateCT <- as.Date(df2$TestDate, format = "%m/%d/%Y")
+# Sort by Test date and store the data frame in df3
+df3 <- df2%>%arrange(ymd(TestDateCT))
+# show the first 6 row of that data frame df3
+head(df3)
+# Create a histogram with frequency of the tests by time
+barplot(df3$TotalTests)
+# The tests have got taken every day.
+```
+
+C. What is the data type of **TestDate**? Explain in a comment.
+
+```{r}
+#Get the type of variable TestDate
+typeof(df$TestDate)
+#It is character meaning that R knows it a string note dates!
+```
+
+D. To properly display the **TestDate** values as dates in our plots, we need to convert **TestDate** to date format with the **as.Date()** function. Run the code below and check the data type of the variable again to make sure it is not coded as text anymore:
+
+```{r}
+#show the type of variable TestDate
+typeof(df$TestDate)
+df$TestDate<-as.Date(df$TestDate, format = "%m/%d/%Y")
+```
+
+```{r}
+#show the type and structure of variable TestDate
+typeof(df$TestDate)
+str(df$TestDate)
+# The type has got corrected
+```
+
+## Step 2: Clean up the NAs and create subsets
+
+A.	It is always good practice, when you first start working with a dataset, to explore it for missing values. Check the **TotalTests** and **PositiveCases** for missing values. Are there any? What does empty output suggest about the number of missing observations?
+
+Hint: use *is.na()* 
+
+```{r}
+# Show the number of rows where the variable TotalTests is missing 
+nrow(df%>%filter(is.na(df$TotalTests)))
+# It suggest the days that there were no test
+# Show the number of rows where the variable PositiveCases is missing 
+nrow(df%>%filter(is.na(df$PositiveCases)))
+# It suggest the days that there were no positive case
+```
+
+B. There is an R package called **imputeTS** specifically designed to repair missing values in time series data. We will use this instead of the simpler way, **mean substitution**, because it tends to be more accurate.
+<br>The **na_interpolation()** function in this package takes advantage of a unique characteristic of time series data: neighboring points in time can be used to  guess  about a missing value in between. <br>Use this function on each of the two numeric variables in **df** and don't forget to **update** them by overwriting them with the output of the **na_interpolation()** function. 
+
+```{r}
+library(imputeTS)
+df$TotalTests <- na_interpolation(df$TotalTests)
+df$PositiveCases <- na_interpolation(df$PositiveCases)
+```
+
+C. Run the code from A to make sure there is no more missing data:
+
+```{r}
+# Show the number of rows where the variable TotalTests is missing 
+nrow(df%>%filter(is.na(df$TotalTests)))
+# Show the number of rows where the variable PositiveCases is missing 
+nrow(df%>%filter(is.na(df$PositiveCases)))
+#There is no missing data
+
+```
+
+D. As we've done before, let's create a new variable which is the ratio of **PositiveCases** to **TotalTests** - save it as an additional variable in **df** called **PositivityRate**:
+
+```{r}
+#Create a new variable which is the ratio of PositiveCases to TotalTests
+df$PositivityRate <- df$PositiveCases/df$TotalTests
+#Show the first 6 rows of the dataset
+head(df)
+```
+
+E. Create a subset of **df** containing **only the records for children**. Save it in a new dataframe called **dfChildren**. Make sure this new df has **2,010 observations and 8 variables**.
+
+```{r}
+dfChildren <- df%>%filter(df$AgeCategory=="children")
+head(dfChildren)
+```
+
+F. Create a subset of **df** containing only the records for **young adults**. Save it in a new dataframe called **dfYA**. 
+
+```{r}
+dfYA <- df%>%filter(df$AgeCategory=="young_adults")
+head(dfYA)
+```
+
+G. Using the same logic, create 2 more subsets of **df**: one containing only the records for **middle-aged adults** (call it **dfMA**), and another one with only the data of **older adults** - **dfOA**. After this step, you should have a total of 4 subsets: 
+- dfChildren
+- dfYA
+- dfMA
+- dfOA
+
+```{r}
+dfMA <- df%>%filter(df$AgeCategory=="middle-aged_adults")
+head(dfMA)
+dfOA <- df%>%filter(df$AgeCategory=="older_adults")
+head(dfOA)
+```
+
+## Step 3: Use ggplot to explore the distribution of each variable
+**Don t forget to install and library the ggplot2 package.** Then: <br>
+
+A.	Create a histogram for **PositiveCases** in the **dfOA** dataframe (using **ggplot**). Be sure to add a title and briefly describe what the histogram means in a comment.
+
+```{r}
+library(ggplot2)
+# Basic histogram
+HistOA <- ggplot(dfOA, aes(x=PositiveCases)) + geom_histogram(color="black", fill="red") + ggtitle("New York State COVID Test Positivity Distribution for old adults in 2020-2022")
+HistOA
+# Amoung old adults most of the time number of positive cases for tests range between 0 to 600
+```
+
+B.	Create histograms (using **ggplot**) of the **PositiveCases** variable in each of the other three subsets from Step 2G. <br>
+For each histogram, comment on its shape - what information can we glean from it?
+
+```{r}
+library(ggplot2)
+# Basic histogram
+HistYA <- ggplot(dfYA, aes(x=PositiveCases)) + geom_histogram(color="black", fill="blue") + ggtitle("New York State COVID Test Positivity Distribution for young adults in 2020-2022")
+HistYA
+# Amoung young adults most of the time number of positive cases for tests range between 0 to 600
+```
+
+```{r}
+library(ggplot2)
+# Basic histogram
+HistMA <- ggplot(dfMA, aes(x=PositiveCases)) + geom_histogram(color="black", fill="orange") + ggtitle("New York State COVID Test Positivity Distribution for middle aged adults in 2020-2022")
+HistMA
+# Amoung middle aged adults most of the time number of positive cases for tests range between 0 to 800
+```
+
+```{r}
+library(ggplot2)
+# Basic histogram
+HistCH <- ggplot(dfChildren, aes(x=PositiveCases)) + geom_histogram(color="black", fill="pink") + ggtitle("New York State COVID Test Positivity Distribution for Children in 2020-2022")
+HistCH
+# Amoung children most of the time number of positive cases for tests range between 0 to 200
+```
+
+## Step 4: Explore how the data changes over time
+A.	These data were collected in a period of almost 2 years. You can thus observe changes over time with the help of a line chart. Let's focus on the **dfOA** subset first: <br>
+Create a **line chart**, with **TestDate** on the X-axis and **PositivityRate** on the Y-axis.
+
+```{r}
+Libe_OA <- ggplot(data=dfOA, aes(x=TestDate, y=PositivityRate, group=1)) + geom_line(color="red") + ggtitle("New York State COVID Test Positivity Rate for older adults in 2020-2022")
+Libe_OA 
+```
+
+B.	Next, create similar graphs for each of the other three subsets. Change the **color** of the line plots (any color you want).
+
+```{r}
+Libe_YA <- ggplot(data=dfYA, aes(x=TestDate, y=PositivityRate, group=1)) + geom_line(color="blue") + ggtitle("New York State COVID Test Positivity Rate for younger adults in 2020-2022")
+Libe_YA 
+```
+
+```{r}
+Libe_MA <- ggplot(data=dfMA, aes(x=TestDate, y=PositivityRate, group=1)) + geom_line(color="orange") + ggtitle("New York State COVID Test Positivity Rate for Middle Aged Adults in 2020-2022")
+Libe_MA 
+```
+
+```{r}
+Libe_Ch <- ggplot(data=dfChildren, aes(x=TestDate, y=PositivityRate, group=1)) + geom_line(color="pink") + ggtitle("New York State COVID Test Positivity Rate for Children in 2020-2022")
+Libe_Ch 
+```
+
+C.	In a comment, talk about the insights you got from the line charts you created - can you spot any trends within and between the line charts?
+
+```{r}
+#As can be seen from the line series graphs, in all of the age groups, the positivist rate were high at the begining of the pandemic. It decreased and increased again hitting the all time maximum in march then it decreased again to a reletively low rate untill january of 2022 when it strted increasing again
+```
+
+D.	Finally, using the **dfOA** subset, create a **scatter plot**, showing **TotalTests** on the x axis, **PositiveCases** on the y axis, and having the **color and size** of the point represent **Year**.
+
+```{r}
+scat_OA <- ggplot(data = dfOA , aes(x=TotalTests, y=PositiveCases))+
+  geom_point(aes(size= Year,color =Year), alpha= 0.5)+
+  ggtitle("New York State Total COVID test vs Positive Cases for older adults in 2020-2022")
+scat_OA
+```
+
+E. Create a similar scatter plot for the **dfYA** subset. 
+
+```{r}
+scat_OA <- ggplot(data = dfYA , aes(x=TotalTests, y=PositiveCases))+
+  geom_point(aes(size= Year,color =Year), alpha= 0.5)+
+  ggtitle("New York State Total COVID test vs Positive Cases for young adults in 2020-2022")
+scat_OA
+```
+
+F.	Create two barcharts (**using ggplot**) that you think would be interesting by exploring any attribute in two of the dataframes that you have already created via a barchart.
+
+```{r}
+Bar_PC <- ggplot(data=df, aes(x=Year, y=PositiveCases, fill=AgeCategory)) + geom_bar(stat="identity", position=position_dodge()) +  scale_fill_manual(values=c("pink","orange","red","blue")) + ggtitle("New York State COVID test Positive Cases for different age groups in 2020-2022")
+Bar_PC 
+
+```
+```{r}
+Bar_PR <- ggplot(data=df, aes(x=Year, y=PositivityRate, fill=AgeCategory)) + geom_bar(stat="identity", position=position_dodge()) +  scale_fill_manual(values=c("pink","orange","red","blue")) + ggtitle("New York State COVID test Positivity Rate for different age groups in 2020-2022")
+Bar_PR 
+```
+```{r}
+df%>%group_by(Year)%>%summarise(sum(TotalTests))
+```
+
+G.	Interpret these visualizations, what insight do they provide?
+
+```{r}
+# in 2020 although positive cases were really low, the positivity rate were high in all the age groups. It indicates that most of the people who took the test were actually sick. Maybe people just took the tests when they had severe symptoms.
+# in 2022 although positive cases were really high, the positivity rate were low in all the age groups. It indicates that there are more people taking COVID and most of the people who took the test were not actually sick
+
+#positivity rate is decreasing overtime meaning that amoung the people who are taking the test, there are fewer people who have got COVID. However, we should pay attention that positive cases are increasing.
+
+#Positivity rate amoung children is always high compared to other age groups. The reason may be that most of the children who took the test were actually sick. children only take the test when they have symptoms. However, adults may take the test for visiting new cities, going to school, working in a company, etc.
+
+#positive cases in young adults is always high compared to the other age groups. That may be because young adults are more active and are interacting with a lot of people and are pron to get COVID.
+
+```
+
+#in 2020 although positive cases were really low, the positivity rate were high in all the age groups. It indicates that most of the people who took the test were actually sick. Maybe people just took the tests when they had severe symptoms.
+#in 2022 although positive cases were really high, the positivity rate were low in all the age groups. It indicates that there are more people taking COVID and most of the people who took the test were not actually sick
+
+#positivity rate is decreasing overtime meaning that amoung the people who are taking the test, there are fewer people who have got COVID. However, we should pay attention that positive cases are increasing.
+
+#Positivity rate amoung children is always high compared to other age groups. The reason may be that most of the children who took the test were actually sick. children only take the test when they have symptoms. However, adults may take the test for visiting new cities, going to school, working in a company, etc.
+
+#positive cases in young adults is always high compared to the other age groups. That may be because young adults are more active and are interacting with a lot of people and are pron to get COVID.
+

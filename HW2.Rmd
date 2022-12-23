@@ -1,0 +1,150 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Intro to Data Science - HW 2
+
+##### Copyright 2022, Jeffrey Stanton, Jeffrey Saltz, and Jasmina Tacheva
+
+```{r}
+# Enter your name here: Alireza Zarrinmehr
+```
+
+### Attribution statement: (choose only one and delete the rest)
+
+```{r}
+# 1. I did this homework by myself, with help from the book and the professor.
+```
+
+### Reminders of things to practice from last week: 
+Assignment arrow:  		<- <br>
+The combine command: 	c( ) <br>
+Descriptive statistics: 	mean( ) sum( ) max( ) <br>
+Arithmetic operators:		+ - * /<br>
+Boolean operators:		>    <    >=    <=   ==   !=  <br>
+
+**This Week:** Explore the **quakes** dataset (which is included in R). 
+
+
+<br>
+<br>
+
+**Step 0:** Prepare the data <br>
+A. Copy the **quakes** dataset into a new dataframe (call it **myQuakes**), so that if you need to start over, you can do so easily (by copying **quakes** into **myQuakes** again). Summarize the variables in **myQuakes** using an R command. Also, explore the structure of the dataframe - using another R command. In a brief comment, describe what this dataset is about based on your analysis of the variables in it. 
+
+```{r}
+# Copying the data set.
+myQuakes <- quakes
+# summarizing the variables in the data set.
+summary(myQuakes)
+# exploring the structure of data frame.
+str(myQuakes)
+# this data frame illustrates the latitude and longitute of the point that earthquakes happened. It also contains the magnitude and depth values and tells you which station recorded the data 
+```
+
+**Step 1:** Explore the earthquake magnitude variable called **mag**  <br>
+
+A.	What is the average magnitude? Use mean() or summary():
+
+```{r}
+#getting the average of the magnitudes 
+mean(myQuakes$mag)
+```
+
+B.	What is the magnitude of the smallest earthquake? Use min() or summary() and save the result in a variable called **minQuake**:
+
+```{r}
+# storing the minimum magnitude of earthquakes
+minQuake <- min(myQuakes$mag)
+# printing the minimum magnitude of earthquakes
+minQuake
+```
+
+C.	What is the magnitude of the largest earthquake? Use max() or summary() and save the result in a variable called **maxQuake**:
+
+```{r}
+# storing the maximum magnitude of earthquakes
+maxQuake <- max(myQuakes$mag)
+# printing the maximum magnitude of earthquakes
+maxQuake
+```
+
+D.	Output the **fourth row** of the dataframe:
+
+```{r}
+#loading the library for slice
+library(dplyr)
+# the fourth row of the data frame
+myQuakes[4,]
+#another way of getting the fourth row
+slice(myQuakes,c(4))
+```
+
+E. Create a new dataframe, with only the rows where the **magnitude is greater than 4**. How many rows are in that dataframe (report this number using code, do not count by looking at the output):
+
+```{r}
+#Creating a new dataframe, with only the rows where the magnitude is greater than 4
+BigQuakes <- filter(myQuakes, mag>4)
+#number of rows in the datafram
+count(BigQuakes)
+```
+
+F.	Using the **arrange()** function, create a **sorted dataframe** based on magnitude and store it in **quakeSorted1**. Explain how this function works.
+
+```{r}
+quakeSorted1 <- arrange(myQuakes,mag)
+quakeSorted1
+# arrange() orders the rows of a data frame by the values of selected columns.
+```
+
+G. Now create a second sorted dataframe called **quakeSorted2** using the **order()** function. Explain in a comment how the function works.
+
+```{r}
+quakeSorted2 <- myQuakes[order(myQuakes$mag),]
+quakeSorted2
+#order returns a permutation which rearranges its first argument into ascending or descending order then we load those permutations in the data set rows
+```
+
+H. Print the top rows of each of the sorted dataframes using the **head()** function and explain in a comment what you see - did the two sorting functions produce a similar result?
+
+```{r}
+head(quakeSorted1)
+# both produce the similar result. However, in the second one we can the the row number of the original data set which contains the values
+
+```
+
+```{r}
+head(quakeSorted2)
+# both produce the similar result. However, in the second one we can the the row number of the original data set which contains the values
+
+```
+
+I.	What are the latitude and longitude of the quake reported by the largest number of stations?  
+
+```{r}
+select(filter(myQuakes, stations==max(myQuakes$stations)), lat, long)
+```
+
+J.	What are the latitude and longitude of the quake with the smallest magnitude?  
+
+```{r}
+select(filter(myQuakes,stations==min(myQuakes$stations)), lat, long)
+```
+
+**Step 3:** Using conditional if statements <br>
+
+A.	 Test if **maxQuake** is greater than 6 (output  yes  or  no ) <br>
+**Hint:** Try modifying the following code in R: 
+
+```{r}
+if  (maxQuake > 6) "yes" else "no"
+```
+
+B.	 Following the same logic, test if **minQuake** is less than 3 (output  yes  or  no ):
+
+```{r}
+if  (minQuake < 3) "yes" else "no"
+```
+

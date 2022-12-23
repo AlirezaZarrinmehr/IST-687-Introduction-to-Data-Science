@@ -1,0 +1,207 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Intro to Data Science - HW 10
+
+##### Copyright 2022, Jeffrey Stanton, Jeffrey Saltz, and Jasmina Tacheva
+
+```{r}
+# Enter your name here: Alireza Zarrinmehr
+```
+
+### Attribution statement: (choose only one and delete the rest)
+
+```{r}
+# 1. I did this homework by myself, with help from the book and the professor.
+```
+
+**Association mining** can be applied to many data problems beyond the well-known example of **finding relationships between different products in customer shopping data**. In this homework assignment, we will explore **real data** from the banking sector and look for **patterns associated with the likelihood of responding positively to a direct marketing campaign and signing up for a term deposit with the bank (stored in the variable  y )**. <br>
+You can find out more about the variables in this dataset here: https://archive.ics.uci.edu/ml/datasets/bank+marketing
+
+## Part 1: Explore Data Set
+
+A.	Read the contents of the following URL to a dataframe called **bank** <br>
+https://intro-datascience.s3.us-east-2.amazonaws.com/bank-full.csv
+
+**Hint**: Even though this is a .csv file, chances are R won t be able to read it in correctly using the read_csv() function. If you take a closer look at the contents of the URL file, you may notice each field is separated by a **semicolon** (;) rather than a comma. 
+
+In situations like this, consider using either **read.csv()** or **read.table()**, with two additional parameters. *sep=";"* defines how the data is seperated (the default is a comma), and *header=TRUE* defines that there is a header line in the dataset. 
+
+```{r}
+#Import required library.
+library(tidyverse)
+#Read the csv file and store it in a dataset called bank.
+bank <- read.csv(header=TRUE,sep=";",'https://intro-datascience.s3.us-east-2.amazonaws.com/bank-full.csv')
+#Review bank.
+head(bank)
+```
+
+B. Make sure there are **41,188** rows and **21** columns in your **bank** df.
+
+```{r}
+#Get the number of rows and columns.
+dim(bank)
+```
+
+C.	Next, we will focus on some key factor variables from the dataset, and convert a few numeric ones to factor variables. Execute the following command.  Write a comment describing how the conversion for each numeric variable works and what are the variables in the resulting dataframe.
+
+```{r}
+bank_new <- data.frame(
+                     #Change the type of job category to factor.
+                     job=as.factor(bank$job),
+                     #Change the type of marital status to factor. 
+                     marital=as.factor(bank$marital),
+                     #Change the type of housing loan status to factor. 
+                     housing_loan=as.factor(bank$housing),
+                     #Create a new variable showing if the person is young. Change the type of variable to factor.
+                     young=as.factor(bank$age<median(bank$age)),
+                     #Create a new variable showing if the person contacted more than once. Change the type of variable to factor.
+                     contacted_more_than_once=as.factor(bank$campaign>1),
+                     #Create a new variable showing if the person previously contacted. Change the type of variable to factor.
+                     contacted_before_this_campaign=as.factor(bank$previous<0),
+                     #Create a new variable showing if the term deposit sign-ups were successful. Change the type of variable to factor.
+                     success=as.factor(bank$y))
+head(bank_new)
+```
+
+D.	Count the number of successful term deposit sign-ups, using the table( ) command on the **success** variable.
+
+```{r}
+#Count the successful term deposit sign-ups and failed term deposit sign-ups.
+ table(bank_new$success)
+```
+
+E.	Express the results of problem C as percentages by sending the results of the table( ) command into the prop.table( ) command.
+
+```{r}
+#Calculate the probability of successful term deposit sign-ups.
+prop.table(table(bank_new$success))
+```
+
+F.	Using the same techniques, show the percentages for the **marital** and **housing_loan** variables as well.
+
+```{r}
+#Calculate the probability of a person being married, divorced, or single.
+prop.table(table(bank_new$marital))
+#Calculate the probability of having housing loans.
+prop.table(table(bank_new$housing_loan))
+
+```
+
+## Part 2: Coerce the data frame into transactions
+
+A.	Install and library two packages: **arules** and **arulesViz**.
+
+```{r}
+#Import required library.
+library(arules)
+#Import required library.
+library(arulesViz)
+```
+
+B.	Coerce the **bank_new** dataframe into a **sparse transactions matrix** called **bankX**.
+
+```{r}
+#Converting the bank_new dataframe into a sparse transactions matrix
+#using as() function and specifying "transactions" in the function argument
+bankX <- as(bank_new, 'transactions')
+#check structure of the new transactions dataframe.
+str(bankX)
+```
+
+C.	Use the itemFrequency( ) and itemFrequencyPlot( ) commands to explore the contents of **bankX**. What do you see?
+
+```{r}
+itemFrequency(bankX)
+itemFrequencyPlot(bankX, topN=15)
+#The itemFrequencyPlot is used create an item frequency bar plot for inspecting 
+#the item frequency distribution for objects based on itemMatrix
+#The argument topN specifies to only plot the topN items with the highest item
+#frequency or lift 
+```
+
+D.	This is a fairly large dataset, so we will explore only the first 10 observations in the **bankX** transaction matrix: 
+
+```{r}
+#Show the first 10 observations or transactions in the matrix.
+inspect(bankX[1:10]) 
+```
+
+E. Explain the difference between **bank_new** and **bankX** in a block comment:
+
+```{r}
+#bank_new is a dataframe with 41188 observations and 7 variables 
+#while bankX is a sparse transactions matrix created from bank_new
+#In bankX each observation shows all the variables in one transaction.
+```
+
+## Part 3: Use arules to discover patterns
+
+**Support** is the proportion of times that a particular set of items occurs relative to the whole dataset. <br>
+**Confidence** is proportion of times that the consequent occurs when the antecedent is present. <br>
+
+A.	Use **apriori** to generate a set of rules with support over 0.005 and confidence over 0.3, and trying to predict who successfully signed up for a term deposit. <br>
+**Hint:** You need to define the **right-hand side rule (rhs)**.
+
+```{r}
+rules1 <- apriori(bankX,
+ parameter=list(supp=0.005, conf=0.3),
+ control=list(verbose=F),
+ appearance=list(default="lhs",rhs=("success=yes")))
+#The apriori function is used to generate association rules
+#A support of 0.5% and confidence of 30% is specified in the arguments
+#The rhs is specified as "success=yes", denoting successfully 
+#signed up for a term deposit
+```
+
+B.	Use inspect() to review of the **ruleset**. 
+
+```{r}
+inspect(rules1)
+#The inspect function displays the rulesets generated by the apriori function
+#and stored in rules1 variable
+```
+
+C.	Use the output of inspect( ) or inspectDT( ) and describe **any 2 rules** the algorithm found.  
+
+```{r}
+library(tidyverse)
+#inspectDT(rules1)
+
+#2 of the best rules or rules that hold the most significance can be 
+#interpreted by comparing the confidence and lift value of the rules
+#a higher confidence as well as higher lift value is desired
+
+#The rule - job= student,marital=single,young=TRUE
+#has a high confidence and lift. The rule denotes that the algorithm predicts
+#that young,single students are likely to be successfully get signed up
+#for a term deposit
+
+#The rule - job=student,marital=single,young=TRUE,contacted_before_this_campaign=
+#FALSE, denotes that single,young students that were never contacted about the
+#campaign before also are highly likely to be successfully signed up for a term 
+#deposit
+```
+
+D. Generate a partition tree from the dataframe (not the transactions)
+
+```{r}
+library(rpart)
+cartTree <- rpart(success ~., data = bank_new, method="class")
+```
+
+View the model (as a tree), and then explain with a block comment if this tree is helpful
+
+```{r}
+library(rpart.plot)
+prp(cartTree, faclen = 0, cex = 0.8, extra = 1)
+#It is not a helpful tree
+```
+ 
+
+
+
+

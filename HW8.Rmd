@@ -1,0 +1,180 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Intro to Data Science HW 8
+##### Copyright 2022, Jeffrey Stanton, Jeffrey Saltz, and Jasmina Tacheva
+
+```{r}
+# Enter your name here: Alireza Zarrinmehr
+```
+
+### Attribution statement: (choose only one and delete the rest)
+
+```{r}
+# 1. I did this homework by myself, with help from the book and the professor.
+```
+
+The chapter on **linear models** ( Lining Up Our Models ) introduces **linear predictive modeling** using the tool known as **multiple regression**. The term  multiple regression  has an odd history, dating back to an early scientific observation of a phenomenon called ** regression to the mean. ** These days, multiple regression is just an interesting name for using **linear modeling** to assess the **connection between one or more predictor variables and an outcome variable**. 
+
+
+<br>In this exercise, you will **predict food insecurity from three predictors**.
+
+A.	We will be using the **Food Insecurity** data set from HW7. Copy it from this URL: 
+
+https://data-science-intro.s3.us-east-2.amazonaws.com/FoodInsecurity.csv
+
+ into a dataframe called **df** and use the appropriate functions to **summarize the data**. 
+
+```{r}
+library(tidyverse)
+df <- read_csv("https://data-science-intro.s3.us-east-2.amazonaws.com/FoodInsecurity.csv")
+summary(df)
+```
+
+B.	In the analysis that follows, **LAPOP1_10** will be considered as the **outcome variable**, and **Pop2010**, **AveragePovertyRate**, and **MedianFamilyIncome** as the **predictors**. Add a comment to briefly explain the outcome variable (take a look at HW 7 if needed).
+
+```{r}
+# LAPOP1_10:          The number of people living beyond 1 mile for urban areas or 10 miles for rural 
+#                     areas from a supermarket in all counties 
+#Getting the structure of data
+str(df)
+#Changing the type of AveragePovertyRate from character to numeric 
+df$AveragePovertyRate <- as.numeric(df$AveragePovertyRate)
+#Changing the type of MedianFamilyIncome from character to numeric 
+df$MedianFamilyIncome <- as.numeric(df$MedianFamilyIncome)
+#Building th regression model:
+lmOutM <- lm(formula = LAPOP1_10 ~ MedianFamilyIncome + Pop2010 + AveragePovertyRate, data=df)
+summary(lmOutM)
+```
+
+C.	Inspect the outcome and predictor variables  are there any missing values? Show the code you used to check for that.
+
+```{r}
+library(tidyverse)
+#Get the number of rows with missing value for AveragePovertyRate
+nrow(df%>%filter(is.na(df$AveragePovertyRate)))
+#Get the number of rows with missing value for MedianFamilyIncome
+nrow(df%>%filter(is.na(df$MedianFamilyIncome)))
+#Get the number of rows with missing value for Pop2010
+nrow(df%>%filter(is.na(df$Pop2010)))
+
+```
+
+D. What does it mean when the output of the is.na() function is empty? Explain in a comment. Are all predictors coded as numerical variables? Show your code to check for that and if they are not - find a way to fix this issue, re-check for missing values, and implement a strategy to deal with them if present (Hint - **imputeTS** might help).
+
+```{r}
+#When the output of the is.na() function is empty we dont have any missing values
+#Two of predictors were character. We have already changed the type to numeric
+#check the type of variables:
+str(df)
+# Load the library
+library("imputeTS")
+#interpolate the NAs
+df <- na_interpolation(df)
+#double check for missing values:
+#Get the number of rows with missing value for AveragePovertyRate
+nrow(df%>%filter(is.na(df$AveragePovertyRate)))
+#Get the number of rows with missing value for MedianFamilyIncome
+nrow(df%>%filter(is.na(df$MedianFamilyIncome)))
+#Get the number of rows with missing value for Pop2010
+nrow(df%>%filter(is.na(df$Pop2010)))
+
+```
+
+E.	Create **3 bivariate scatterplots (X-Y) plots** (using ggplot), for each of the predictors with the outcome. **Hint:** In each case, put **LAPOP1_10 on the Y-axis**, and a **predictor on the X-axis**. Add a comment to each, describing the plot and explaining whether there appears to be a **linear relationship** between the outcome variable and the respective predictor.
+
+```{r}
+#load the gg plot library
+library(ggplot2)
+# build a scatter plot of LAPOP1_10 vs Pop2010
+G1 <- ggplot(data = df, aes(x=MedianFamilyIncome, y =LAPOP1_10)) + geom_point()+
+  geom_smooth(method="lm", se=FALSE)+
+  ggtitle("LAPOP1_10 vs Pop2010")
+# build a scatter plot of LAPOP1_10 vs AveragePovertyRate
+G2 <- ggplot(data = df, aes(x=AveragePovertyRate, y =LAPOP1_10)) + geom_point()+
+  geom_smooth(method="lm", se=FALSE)+
+  ggtitle("LAPOP1_10 vs AveragePovertyRate")
+# build a scatter plot of LAPOP1_10 vs MedianFamilyIncome
+G3 <- ggplot(data = df, aes(x=MedianFamilyIncome, y =LAPOP1_10)) + geom_point()+
+  geom_smooth(method="lm", se=FALSE)+
+  ggtitle("LAPOP1_10 vs MedianFamilyIncome")
+#Print the scatter plots
+G1
+G2
+G3
+#After careful observation, we can see that: 
+#LAPOP1_10 is in positive correlation with Pop2010.
+#LAPOP1_10 is in negative correlation with AveragePovertyRate.
+#LAPOP1_10 is in positive correlation with MedianFamilyIncome.
+```
+
+F.	Next, create a **simple regression model** predicting **LAPOP1_10 based on Pop2010**, using the **lm( )** command. In a comment, report the **coefficient** (aka **slope** or **beta weight**) of **Pop2010** in the regression output and, **if it is statistically significant**, **interpret it** with respect to **LAPOP1_10**. Report the **adjusted R-squared** of the model and try to explain what it means. 
+
+```{r}
+lmOutM1 <- lm(formula = LAPOP1_10 ~ Pop2010, data=df)
+summary(lmOutM1)
+#The coeficient is 1.382e-01, and it is statistically significant. 
+#LAPOP1_10 has a positive correlation with Pop2010.
+#Adjusted R-squared is 0.6437. It means that 64.37 percent of the 
+#changes in LAPOP1_10 can be explained by changes in Pop2010
+```
+
+G.	Create a **multiple regression model** predicting **LAPOP1_10** based on **Pop2010**, **AveragePovertyRate**, and **MedianFamilyIncome**.<br> **Make sure to include all three predictors in one model   NOT three different models each with one predictor.**
+
+```{r}
+lmOutM2 <- lm(formula = LAPOP1_10 ~ Pop2010 + AveragePovertyRate + MedianFamilyIncome, data=df)
+summary(lmOutM2)
+```
+
+H.	Report the **adjusted R-Squared** in a comment.   How does it compare to the adjusted R-squared from Step F? Is this better or worse? Which of the predictors are **statistically significant** in the model? In a comment, report the coefficient of each predictor that is statistically significant. Do not report the coefficients for predictors that are not significant.
+
+```{r}
+#The coeficient for Pop2010 is 1.299e-01, and it is statistically significant. 
+
+#The coeficient for AveragePovertyRate is 7.083e+02, and it is statistically significant. 
+
+#The coeficient for MedianFamilyIncome is 6.381e-01, and it is statistically significant. 
+
+#Adjusted R-squared is 0.6618 which is better r=than the last model 
+#with adjusted R-squared of 0.6437.
+#It means that 66.18 percent of the changes in LAPOP1_10 can be explained by changes in 
+#Pop2010, AveragePovertyRate, and MedianFamilyIncome.
+
+#Y=-4.299e+04+ 1.299e-01*Pop2010+ 7.083e+02*AveragePovertyRate +6.381e-01*MedianFamilyIncome
+```
+
+I.	Create a one-row data frame like this: 
+
+```{r}
+predDF <- data.frame(Pop2010=100000, AveragePovertyRate=20, MedianFamilyIncome=65000)
+```
+
+ and use it with the **predict( )** function to predict the **expected value of LAPOP1_10**:
+
+```{r}
+predict(lmOutM2, predDF)
+```
+ Describe the accuracy of the prediction.  
+
+```{r}
+#For finding the error of the model we need to know the Y value to compare it with the model out come. 
+#Generally the accuracy can be attributed to Adjusted R-squared
+```
+
+J.	Create an additional **multiple regression model**, with **AveragePovertyRate** as the **outcome variable**, and the other **3 variables** as the **predictors**. 
+
+Review the quality of the model by commenting on its **adjusted R-Squared**.  
+
+```{r}
+lmOutM3 <- lm(formula = AveragePovertyRate ~ Pop2010 + LAPOP1_10 + MedianFamilyIncome, data=df)
+summary(lmOutM3)
+
+#This model is not that helpful as it is giving us an Adjusted R-squared of 0.5159. 
+#The quality of the last model was better as it had a higher adjusted r squared.
+```
+
+
+

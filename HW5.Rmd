@@ -1,0 +1,188 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Intro to Data Science - HW 5
+
+##### Copyright 2022, Jeffrey Stanton, Jeffrey Saltz, and Jasmina Tacheva
+
+```{r}
+# Enter your name here: Alireza Zarrinmehr
+```
+
+### Attribution statement: (choose only one and delete the rest)
+
+```{r}
+# 1. I did this homework by myself, with help from the book and the professor.
+```
+
+Reminders of things to practice from previous weeks: <br>
+Descriptive statistics: 	mean( ) max( ) min( )<br>
+Coerce to numeric:		as.numeric( )<br>
+
+## Part 1: Use the Starter Code 
+
+Below, I have provided a starter file to help you. <br>
+
+Each of these lines of code **must be commented** (the comment must that explains what is going on, so that I know you understand the code and results).
+
+```{r}
+#install.packages('RCurl')
+#install.packages('jsonlite')
+library(tidyverse)
+library(RCurl) #Load the RCurl library
+library(jsonlite) #Load the jsonlite library
+dataset <- getURL("https://intro-datascience.s3.us-east-2.amazonaws.com/role.json") #Load the data from the url and save it in a dataset called "dataset"
+readlines <- jsonlite::fromJSON(dataset) #Convert the JSON format to a R workable file.
+df <- readlines$objects$person #Accessing the dataframe inside the objects list within readlines list 
+#and storing it into df 
+mpg%>%ggplot() + aes(x=displ,y=hwy) + geom_point()
+```
+
+A.	Explore the **df** dataframe (e.g., using head() or whatever you think is best).
+
+```{r}
+head(df) #Show the first 6 rows of the dataset df
+str(df) #Explore the structure of the dataset df
+```
+
+B.	Explain the dataset <br>
+o	What is the dataset about? <br>
+o	How many rows are there and what does a row represent?<br>
+o	How many columns and what does each column represent?<br>
+
+```{r}
+# Its the data set of senator's information, their first/last names, their social media pages, their nick name, their middle name, their gender, their birthday dates.
+# There are 100 observations(rows). Each row represents a senator
+# There are 17 columns. Each column represents a feature of those senator 
+#bioguideid - Alphanumeric ID number
+#birthday - birthdate
+#cspanid - ID number
+#firstname - Firstname of the senator
+#gender - gender of the senator
+#gender_label - storing gender as a universally acceptable and format
+#lastname - Lastname of the senator
+#link - link to the personal page 
+#middlename - middlename of senator
+#name - Full name of senator including the state they govern
+#namemod - Represents suffix or prefix 
+#nickname - Nickname of senator
+#osid - Identification number
+#pvsid - represents Person Validation System ID
+#sortname - Name of senator 
+#twitterid - Twitter id of the senator
+#youtube_id - Youtube id of the senator
+```
+
+## Part 2: Investigate the resulting dataframe 
+
+A.	Describe what you see when you run the **table()** function on the **gender** variable.
+
+```{r}
+table(df$gender)
+# number of males and females in the data set.
+```
+
+A1.	Generate the count of number of females and number of males, using the tidyverse **group_by()**, **summarise()** and **n()** functions.
+
+```{r}
+library(tidyverse)
+df %>% group_by(gender) %>%summarise(Count = n())
+# get the number of male and female
+```
+
+B. How many senators are women?
+
+```{r}
+# There are 24 female senators
+```
+
+C.	How many senators don't have a YouTube account? <br> **Hint:** You can use the **is.na** function to locate the rows for which the YouTube account is missing and then wrap it in the **nrow()** or **sum** function to count the number of missing instances.
+
+```{r}
+nrow(df%>%filter(is.na(df$youtubeid))) #filter the senators without youtube accounts
+#27 senators dont have you tube account
+```
+
+D. Using the approach in C, i.e.using the **is.na()** function, show how many senators ***do*** have a YouTube account. <br>
+**Hint:** You can reverse the **is.na()** function by placing a **!** in front of it - **!is.na( )**.  
+
+```{r}
+nrow(df%>%filter(!is.na(df$youtubeid))) #filter the senators with youtube accounts
+#73 senators have you tube account
+```
+
+E.	How many women senators have a YouTube account? 
+
+```{r}
+nrow(
+    df%>%filter(!is.na(df$youtubeid)) #filter the senators with youtube accounts
+    %>%filter(gender == 'female') #filter the females
+    )
+#16 female senators  have you tube account
+```
+
+F.	Create a new dataframe called **youtubeWomen** that only includes women senators who have a YouTube account.   
+
+```{r}
+#filter the senators with youtube accounts
+youtubeWomen <- df%>%filter(!is.na(df$youtubeid))%>%filter(gender == 'female') #filter the females
+youtubeWomen
+```
+
+G.	What does running this line of code do? Explain in a comment: 
+
+```{r}
+youtubeWomen$year <- substr(youtubeWomen$birthday,1,4)
+#it gets the year each senator was born and stores it in a new column
+```
+
+H.	Use this new variable to calculate the mean **birthyear** in **youtubeWomen**. <br>
+**Hint:** You may need to convert it to numeric first using the **as.numeric()** function.
+
+```{r}
+mean(as.numeric(youtubeWomen$year))
+#Gets the mean of the birth year of the senator's birth-date
+```
+
+I.	Make a histogram of the **birthyears** of senators in **youtubeWomen**. Add a comment describing the shape of the distribution.
+
+```{r}
+hist(as.numeric(youtubeWomen$year))
+#The histogram shows a normal distribution
+# Most of female senators who own You Tube accounts were born between 1950-1960
+```
+
+J. Create a dataframe called **youtubeMen** which only includes male senators with a youTube account. Repeat steps G & H for this dataframe and create a histogram of the birthyears in it. Compare the shape and properties of this histogram to the one in H.
+
+```{r}
+#filter the senators with youtube accounts
+youtubeMen <- df%>%filter(!is.na(df$youtubeid))%>%filter(gender == 'male') #filter the males
+youtubeMen
+
+youtubeMen$year <- substr(youtubeMen$birthday,1,4)
+#it gets the year each senator was born and stores it in a new column
+
+mean(as.numeric(youtubeMen$year))
+#Gets the mean of the birth year of the senator's birth-date
+
+hist(as.numeric(youtubeMen$year))
+#The histogram shows a normal distribution
+# Most of male senators who own You Tube accounts were born between 1950-1955
+
+#the histogram for men has a higher frequency and is divided into more bins
+
+```
+
+K. Take a look at [this article](https://www.theguardian.com/us-news/ng-interactive/2018/nov/15/new-congress-us-house-of-representatives-senate) - explore its interactive features and focus specifically on the section on **gender**. Relating what you learned from the article back to our Senate data, who might feel left out and/or unrepresented based on the current gender composition of the Senate? Explain in a brief comment.
+
+```{r}
+# In comparison to the US, the report claims that men predominate the Congress disproportionally. Additionally, there are no transsexual Congresspeople.
+#in the data set we can observe that the senate congress are dominated by 76 males over 24 females. They need to make the  population of the senators more divers and include more wemon and transgenders.
+library(tidyverse)
+df %>% group_by(gender) %>%summarise(Count = n())
+# get the number of male and female
+```
+

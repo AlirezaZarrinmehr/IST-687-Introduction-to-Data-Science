@@ -1,0 +1,165 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Intro to Data Science - HW 4
+
+##### Copyright 2022, Jeffrey Stanton, Jeffrey Saltz, and Jasmina Tacheva
+
+```{r}
+# Enter your name here:  Alireza Zarrinmehr
+```
+
+### Attribution statement: (choose only one and delete the rest)
+
+```{r}
+# 1. I did this homework by myself, with help from the book and the professor.
+```
+
+**(Chapter 6 of Introduction to Data Science)** <br>
+
+Reminders of things to practice from previous weeks: <br>
+Descriptive statistics: 	mean( )  max( ) min( )<br>
+Sequence operator:		: (For example, 1:4 is shorthand for 1, 2, 3, 4)<br>
+Create a function:		myFunc <- function(myArg) { }<br>
+?command:			Ask R for help with a command<br>
+
+**This module:** **Sampling** is a process of **drawing elements from a larger set**. In data science, when analysts work with data, they often work with a sample of the data, rather than all of the data (which we call the **population**), because of the expense of obtaining all of the data. <br>
+
+One must be careful, however, because **statistics from a sample rarely match the characteristics of the population**. The **goal of this homework** is to **sample from a data set several times and explore the meaning of the results**. Before you get started make sure to read Chapter 6 of *An Introduction to Data Science*. Don t forget your comments!
+
+## Part 1: Write a function to compute statistics for a vector of numeric values
+
+A.	Create a new function which takes a numeric vector as its input argument and returns a dataframe of statistics about that vector as the output. As a start, the dataframe should have the **min**, **mean**, and **max** of the vector. The function should be called **statsCalc**:
+
+```{r}
+statsCalc <- function(x){
+  #calculate the minimum
+  a <- min(x)
+  #calculate the mean
+  b <- mean(x)
+  #calculate the maximum
+  c <- max(x)
+  output <- c(a,b,c)
+  #return the output
+  return(output)
+}
+```
+
+B.	Test your function by calling it with the numbers **one through ten**:
+
+```{r}
+statsCalc(1:10)
+```
+
+C.	Enhance the statsCalc() function to add the **median** and **standard deviation** to the returned dataframe.
+
+```{r}
+statsCalc <- function(x){
+  #calculate the minimum
+  a <- min(x)
+  #calculate the mean
+  b <- mean(x)
+  #calculate the maximum
+  c <- max(x)
+  #calculate the median
+  d <- median(x)
+  #calculate the standard deviation
+  e <- sd(x)
+  output <- c(a,b,c,d,e)
+  return(output)
+}
+```
+
+D.	Retest your enhanced function by calling it with the numbers **one through ten**:
+
+Note that the code below has an error, so just running the code will not work. Fix the code and then run test function.
+
+```{r}
+statsCalc(1:10)
+```
+
+## Part 2: Sample repeatedly from the New York State COVID Testing Dataset from HW 3
+
+A.	Load the dataset from the following URL, using read_csv: https://data-science-intro.s3.us-east-2.amazonaws.com/NYS_COVID_Testing.csv
+
+```{r}
+library(tidyverse)
+testDF <- data.frame(read_csv('https://data-science-intro.s3.us-east-2.amazonaws.com/NYS_COVID_Testing.csv'))
+```
+
+B. Use **head(testDF)** and **tail(testDF)** to show the data. Add a comment that describes what each variable in the data set contains. <br>
+
+```{r}
+head(testDF)
+tail(testDF)
+#TestdDate contains the dates when the test has been taken, AgeGroup represent the age group of people 
+#who have taken the test. positiveCases are the number of positive tests. TotalTests are the total number 
+#of tests that has been taken. AgeCategory represent the age category that people who have taken the test belong to.
+```
+
+C.	Sample ten observations from **testDF$TotalTests**.
+
+```{r}
+sample(testDF$TotalTests, size = 10, replace = FALSE, prob = NULL)
+```
+
+D.	Call your statsCalc( ) function with a new sample of ten observations from **testDF$TotalTests**, where the sampling is done inside the **statsCalc** function call. 
+
+```{r}
+statsCalc(sample(testDF$TotalTests, size = 10, replace = FALSE, prob = NULL))
+```
+
+E. Now use the **mean()** function, with another sample done inside the mean function. Is the mean returned from the **statsCalc** function the same as the mean returned from the mean function on this sample? Why or why not? Explain.
+
+```{r}
+mean(sample(testDF$TotalTests, size = 10, replace = FALSE, prob = NULL))
+#means are not the same because we are taking the mean of two different samples. 
+#The numbers are not the same so the means would not be the same.
+```
+
+F.	Use the **replicate( )** function to repeat your sampling of **testDF$TotalTests** twenty times, with each sample calling **mean()** on ten observations. The first argument to **replicate( )** is the number of repeats you want. The second argument is the little chunk of code you want repeated.
+
+```{r}
+replicate(20, mean(sample(testDF$TotalTests, size = 10, replace = FALSE, prob = NULL)))
+```
+
+G.	Write a comment describing why every replication produces a different result.
+
+```{r}
+#Every time we call the sample function, different samples of TotalTests will be collected. 
+#Samples are not the same, so the mean would not be the same. Thus, every time we replicate we will get 
+#different values.
+```
+
+H.	Rerun your replication, this time doing 20 replications and storing the output of **replicate()** in a variable called **values**.
+
+```{r}
+values <- replicate(20, mean(sample(testDF$TotalTests, size = 10, replace = FALSE, prob = NULL)))
+```
+
+I.	 Generate a **histogram** of the means stored in **values**. 
+
+```{r}
+hist(values)
+```
+
+J.	Repeat the replicated sampling, but this time, raise your replications to **1000**. 
+
+```{r}
+values1000 <- replicate(1000, mean(sample(testDF$TotalTests, size = 10, replace = FALSE, prob = NULL)))
+```
+
+K. Compare the two histograms - why are they different? Explain in a comment.
+
+```{r}
+hist(values1000)
+mean(testDF$TotalTests)
+# According to the rule of big numbers the more replication we do the closer we get to the real mean of 
+#TotalTests which is calculated in the last line. In the first histogram the peak is not close to 11724.96 
+#because the number of replications are just 10. However, In the secound histogram the peak is  close to 
+#11724.96 because the number of replications are bigger at 1000.
+```
+

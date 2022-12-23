@@ -1,0 +1,218 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Intro to Data Science HW 9
+##### Copyright 2022, Jeffrey Stanton, Jeffrey Saltz, and Jasmina Tacheva
+
+```{r}
+# Enter your name here: Alireza Zarrinmehr
+```
+
+### Attribution statement: (choose only one and delete the rest)
+
+```{r}
+# 1. I did this homework by myself, with help from the book and the professor.
+```
+
+Supervised learning means that there is a **criterion one is trying to predict**. The typical strategy is to **divide data** into a **training set** and a **test set** (for example, **two-thirds training** and **one-third test**), train the model on the training set, and then see how well the model does on the test set. <br>
+
+**Support vector machines (SVM)** are a highly flexible and powerful method of doing **supervised machine learning**.
+
+Another approach is to use **partition trees (rpart)** 
+
+In this homework, we will use a movie dataset to train an SVM model, as well as an rpart model, to **classify movies into 2 box office groups**   **success** or **failure**. <br>
+
+This kind of classification algorithms is used in many aspects of our lives   from credit card approvals to stock market predictions, and even some medical diagnoses. <br>
+
+## Part 1: Load and condition the data  
+
+A. The code below reads the contents of an Excel file into a dataframe called movies: <br><br>
+
+You will also need to install( ) and library( ) several other libraries, such as **kernlab** and **caret**.
+
+```{r}
+#install.packages('rio')
+library(rio)
+
+movies = rio::import("https://data-science-intro.s3.us-east-2.amazonaws.com/movies.xlsx")
+```
+
+B.	Which variable contains the outcome we are trying to predict, **whether a movie is a financial success or not**? For the purposes of this analysis, we will focus only on the numeric variables and save them in a new dataframe called **mov**:
+
+```{r}
+mov <- data.frame(belongs_to_collection=movies$belongs_to_collection, 
+                   budget=movies$budget, 
+                   homepage=movies$homepage, 
+                   original_language_en=movies$original_language_en, 
+                   overview=movies$overview, 
+                   popularity=movies$popularity, 
+                   production_companies=movies$production_companies,
+                   runtime=movies$runtime, 
+                   tagline=movies$tagline,  
+                   success=as.factor(movies$success))
+```
+
+C. What is the total number of observations in **mov**? Show your code.
+
+```{r}
+#Getting th estructure of the data frame
+str(mov)
+#We have 1374 observations
+```
+
+## Part 2: Create training and test data sets
+
+A.	Using techniques discussed in class, create **two datasets**   one for **training** and one for **testing**.
+
+```{r}
+#Loading the libraries
+library(kernlab)
+library(caret)
+set.seed(111)
+#Getting the indexes of the train set 
+trainList <- createDataPartition(y=mov$success,p=.70,list=FALSE)
+summary(trainList)
+#Creating the train data set
+trainSet <- mov[trainList,]
+head(trainSet)
+#Creating the test data set
+testSet <- mov[-trainList,]
+head(testSet)
+```
+
+B.	Use the dim( ) function to demonstrate that the resulting training data set and test data set contain the appropriate number of cases.
+
+```{r}
+#Getting the number of rows and columns of the train set
+dim(trainSet)
+#963 is closely 70 percent of 1374
+#Getting the number of rows and columns of the test set
+dim(testSet)
+#411 is closely 30 percent of 1374
+#Getting the total number of rows
+dim(testSet) + dim(trainSet)
+#When adding the number of rows of the train set and test set we get 1374 which is equal to the number of rows of the original mov data set.
+```
+
+## Part 3: Build a Model using SVM
+
+A.	Using the caret package, build a support vector model using all of the variables to predict **success**
+
+```{r}
+# Set up Repeated k-fold Cross Validation
+train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
+# Fit the model 
+svm1 <- train(success ~., data = trainSet, method = "svmLinear", trControl = train_control,  preProcess = c("center","scale"))
+```
+
+B. Output the model you created in the previous step.
+
+```{r}
+#View the model
+svm1
+```
+
+## Part 4: Predict Values in the Test Data and Create a Confusion Matrix
+
+A.	Use the **predict( )** function to validate the model against the test data. Store the predictions in a variable named **svmPred**.
+
+```{r}
+svmPred <- predict(svm1, newdata=testSet)
+svmPred
+```
+
+B.	The **svmPred** object contains a list of classifications for successful (=1) or unsuccessful (=0) movies. Review the contents of **svmPred** using **head( )**.
+
+```{r}
+head(svmPred)
+```
+
+C.	Create a **confusion matrix**, using the **table()** function. Write a comment to explain what each of the 4 numbers means.
+
+```{r}
+#Creating the confusion matrix
+table(svmPred,testSet$success)
+#in 100 cases: prediction says movie was successful and it was actually successful.
+#in 122 cases: prediction says movie was not successful and it was not successful in reality.
+#in 98 cases: prediction says movie was successful but it was not successful in reality.
+#in 91 cases: prediction says movie was not successful but it was actually successful.
+```
+
+D.	What is the **accuracy** based on what you see in the confusion matrix? Show your calculation.
+
+```{r}
+# Dividing the correct prediction to the total predictions
+sum(diag(table(svmPred,testSet$success)))/sum(table(svmPred,testSet$success))
+```
+
+E.	Compare your calculations with the **confusionMatrix()** function from the **caret** package.
+
+```{r}
+#Creating confusion matrix using the caret package
+confusionMatrix(svmPred,testSet$success)
+#We get the same results. However, caret package provide more detailes
+```
+
+F.	Explain, in 2 comments:<br> 1) why it is valuable to have a  test  dataset that is separate from a  training  dataset, and <br>2) what potential ethical challenges may this type of automated classification pose? E.g., if it is used on people rather than movies? 
+
+```{r}
+# 1) To avoid our model from overfitting and to properly assess our model, we 
+#need to split the data into train and test data sets. 
+#We first train the model using the data in the test data set.
+#Then we use the model to predict the outcome of the test data set. 
+#If the accuracy of the model on the test set is less than the accuracy 
+#of the train set the model is overfitted. 
+```
+
+```{r}
+# 2) We will encounter unfair decisions and discrimination. We know that the model 
+#is not 100% accurate so there will be cases in that people deserve something and 
+#they won't get it and in some cases, people don't deserve something they get. 
+#Imagine using a model to predict who will pay off their loans. There will be 
+#honest people who deserve a loan and they won't get it because our model did 
+#a wrong prediction that they won't pay the loan back. This is just one example
+#of the issues we may face regarding unfairness and discrimination.
+```
+
+## Part 5: Now build a tree model (with rpart)
+
+A. Build a model with **rpart**
+<br>
+Note: you might need to install the **e1071** package
+
+```{r}
+library(rpart)
+cartTree <- rpart(trainSet$success ~., data = trainSet, method="class")
+```
+
+B. Visualize the results using  **rpart.plot()**
+
+```{r}
+library(rpart.plot)
+prp(cartTree, faclen = 0, cex = 0.8, extra = 1)
+```
+
+C. Use the **predict()** function to predict the test data, and then generate a **confusion matrix** to explore the results
+
+```{r}
+#Predicting the success of the movies in the test data using Tree model
+TreePred <- predict(cartTree, newdata=testSet, type = "class")
+#exploring the predictions 
+head(TreePred)
+#Creating confusion matrix using the caret package
+confusionMatrix(TreePred,testSet$success)
+```
+
+D. Review the accuracy of the two models - it is not very high. What are some strategies you could use to improve the quality of the models? Answer in a comment block below.
+
+```{r}
+#The accuracy of both models are really low. 50% accuracy is like flipping a coin.
+#However SVM provides a better accuracy at 0.54 compared to tree with accuracy of 0.50.
+#How to improve the model?
+#Extracting features (variables) which give a clear separation between the classes.
+#Using PCA for dimension reduction. We just need to consider the most important variables.
+```
+
