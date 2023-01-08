@@ -2,9 +2,7 @@ Audience:
 Graduate students
 Credits:
 3 credit hours
-
-###Learning Objectives:
-
+Learning Objectives:
 After taking this course, the students will be expected to understand:
 § Essential concepts and characteristics of data
 § The purpose of scripting for data management using R and R-Studio
